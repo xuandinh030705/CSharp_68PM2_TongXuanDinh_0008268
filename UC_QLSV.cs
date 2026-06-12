@@ -15,6 +15,7 @@ namespace WindowsFormsApp01
         public UC_QLSV()
         {
             InitializeComponent();
+            dgvSinhVien.CellClick += DgvSinhVien_CellClick;
             btn_clear.Click += Btn_clear_Click;
 
             dgvSinhVien.ReadOnly = true;
@@ -143,6 +144,27 @@ namespace WindowsFormsApp01
                     MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void DgvSinhVien_CellClick(object sender, DataGridViewCellEventArgs e)
+        {
+            if (e.RowIndex < 0) return;
+
+            DataGridViewRow row = dgvSinhVien.Rows[e.RowIndex];
+            txt_mssv.Text = row.Cells["MSSV"].Value?.ToString();
+            txt_name.Text = row.Cells["FullName"].Value?.ToString();
+            dtpNgaySinh.Value = row.Cells["DateOfBirth"].Value != DBNull.Value
+                ? Convert.ToDateTime(row.Cells["DateOfBirth"].Value)
+                : DateTime.Today;
+            cboGioiTinh.Text = row.Cells["Gender"].Value?.ToString();
+
+            if (row.Cells["ClassId"].Value != null)
+            {
+                cbxLopHoc.SelectedValue = row.Cells["ClassId"].Value.ToString();
+            }
+
+            txt_mssv.Enabled = false;
+            _editingMSSV = txt_mssv.Text;
         }
 
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e) { }
