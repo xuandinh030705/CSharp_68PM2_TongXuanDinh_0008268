@@ -1,0 +1,19 @@
+## .NET
+bin/
+obj/
+*.user
+*.suo
+*.sln.docstates
+
+## NuGet
+packages/
+nuget.exe
+
+## Visual Studio
+.vs/
+*.csproj.user
+*.dbmdl
+
+## OS
+Thumbs.db
+.DS_Store
