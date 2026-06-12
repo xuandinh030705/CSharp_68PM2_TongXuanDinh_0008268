@@ -17,6 +17,7 @@ namespace WindowsFormsApp01
             btn_delete.Click += Btn_delete_Click;
             btn_clear.Click += Btn_clear_Click;
             btn_search.Click += Btn_search_Click;
+            btn_view_list.Click += Btn_view_list_Click;
         }
 
         private void UC_QLLH_Load(object sender, EventArgs e)
@@ -187,6 +188,42 @@ namespace WindowsFormsApp01
         private void Btn_search_Click(object sender, EventArgs e)
         {
             LoadData();
+        }
+
+        private void Btn_view_list_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_editingClassId))
+            {
+                MessageBox.Show("Vui lòng chọn lớp học từ danh sách!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string tenLop = txtTenLop.Text.Trim();
+            Form form = new Form();
+            form.Text = $"Danh sách sinh viên - {tenLop}";
+            form.Size = new System.Drawing.Size(800, 500);
+            form.StartPosition = FormStartPosition.CenterParent;
+
+            DataGridView dgv = new DataGridView();
+            dgv.Dock = DockStyle.Fill;
+            dgv.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+            dgv.ReadOnly = true;
+            dgv.RowHeadersVisible = false;
+
+            using (var conn = DbContext.GetConnection())
+            {
+                conn.Open();
+                string sql = "SELECT MSSV, FullName, DateOfBirth, Gender FROM Students WHERE ClassId=@classId AND IsDeleted=0";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@classId", _editingClassId);
+                MySqlDataAdapter da = new MySqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                dgv.DataSource = dt;
+            }
+
+            form.Controls.Add(dgv);
+            form.ShowDialog();
         }
 
         private void dgvLopHoc_CellContentClick(object sender, DataGridViewCellEventArgs e)
