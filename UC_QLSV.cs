@@ -1,0 +1,150 @@
+using System;
+using System.Data;
+using System.Windows.Forms;
+using MySql.Data.MySqlClient;
+
+namespace WindowsFormsApp01
+{
+    public partial class UC_QLSV : UserControl
+    {
+        private int _pageSize = 10;
+        private int _currentPage = 1;
+        private int _totalRecords = 0;
+        private string _editingMSSV = null;
+
+        public UC_QLSV()
+        {
+            InitializeComponent();
+            btn_clear.Click += Btn_clear_Click;
+
+            dgvSinhVien.ReadOnly = true;
+            dgvSinhVien.AllowUserToAddRows = false;
+            dgvSinhVien.AllowUserToDeleteRows = false;
+            dgvSinhVien.EditMode = DataGridViewEditMode.EditProgrammatically;
+        }
+
+        private void UC_QLSV_Load(object sender, EventArgs e)
+        {
+            dtpNgaySinh.Value = DateTime.Today;
+            LoadLopHoc();
+            LoadData();
+        }
+
+        private void LoadLopHoc()
+        {
+            using (var conn = DbContext.GetConnection())
+            {
+                conn.Open();
+                string sql = "SELECT * FROM Classes";
+                MySqlDataAdapter da = new MySqlDataAdapter(sql, conn);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                cbxLopHoc.DataSource = dt;
+                cbxLopHoc.DisplayMember = "ClassName";
+                cbxLopHoc.ValueMember = "ClassId";
+            }
+        }
+
+        private void LoadData()
+        {
+            using (var conn = DbContext.GetConnection())
+            {
+                conn.Open();
+                string keyword = textBox1.Text.Trim();
+                string searchPattern = "%" + keyword + "%";
+
+                MySqlCommand cmdCount = new MySqlCommand(
+                    "SELECT COUNT(*) FROM Students WHERE IsDeleted = 0 " +
+                    "AND (MSSV LIKE @search OR FullName LIKE @search OR ClassId LIKE @search)", conn);
+                cmdCount.Parameters.AddWithValue("@search", searchPattern);
+                _totalRecords = Convert.ToInt32(cmdCount.ExecuteScalar());
+
+                int offset = (_currentPage - 1) * _pageSize;
+                int totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalRecords / _pageSize));
+
+                string sql = "SELECT MSSV, FullName, DateOfBirth, Gender, ClassId FROM Students " +
+                    "WHERE IsDeleted = 0 AND (MSSV LIKE @search OR FullName LIKE @search OR ClassId LIKE @search) " +
+                    "ORDER BY MSSV LIMIT @offset, @pageSize";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@search", searchPattern);
+                cmd.Parameters.AddWithValue("@offset", offset);
+                cmd.Parameters.AddWithValue("@pageSize", _pageSize);
+
+                MySqlDataAdapter da = new MySqlDataAdapter(cmd);
+                DataTable dt = new DataTable();
+                da.Fill(dt);
+                dgvSinhVien.DataSource = dt;
+
+                label4.Text = $"Trang {_currentPage}/{totalPages} | {_totalRecords} bản ghi";
+            }
+        }
+
+        private void ResetForm()
+        {
+            txt_mssv.Clear();
+            txt_name.Clear();
+            cboGioiTinh.SelectedIndex = -1;
+            dtpNgaySinh.Value = DateTime.Today;
+            cbxLopHoc.SelectedIndex = -1;
+            txt_mssv.Enabled = true;
+            _editingMSSV = null;
+        }
+
+        private void Btn_clear_Click(object sender, EventArgs e)
+        {
+            ResetForm();
+            _currentPage = 1;
+            textBox1.Clear();
+            LoadData();
+        }
+
+        private void btn_add_Click(object sender, EventArgs e)
+        {
+            string mssv = txt_mssv.Text.Trim();
+            string name = txt_name.Text.Trim();
+            string gioitinh = cboGioiTinh.Text.Trim();
+            DateTime dateTime = dtpNgaySinh.Value;
+
+            if (string.IsNullOrEmpty(mssv) || string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show("Vui lòng nhập đầy đủ MSSV và Họ tên!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (cbxLopHoc.SelectedValue == null)
+            {
+                MessageBox.Show("Danh sách lớp học đang trống hoặc bạn chưa chọn lớp!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string classId = cbxLopHoc.SelectedValue.ToString();
+
+            using (var conn = DbContext.GetConnection())
+            {
+                conn.Open();
+                string sql = "INSERT INTO Students (MSSV, FullName, DateOfBirth, Gender, ClassId) VALUES (@mssv, @name, @dob, @gender, @classId)";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@mssv", mssv);
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@dob", dateTime);
+                cmd.Parameters.AddWithValue("@gender", gioitinh);
+                cmd.Parameters.AddWithValue("@classId", classId);
+
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                    ResetForm();
+                    _currentPage = 1;
+                    LoadData();
+                    MessageBox.Show("Thêm sinh viên thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void comboBox2_SelectedIndexChanged(object sender, EventArgs e) { }
+    }
+}
