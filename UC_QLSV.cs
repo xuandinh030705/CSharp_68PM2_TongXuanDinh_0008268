@@ -17,6 +17,7 @@ namespace WindowsFormsApp01
             InitializeComponent();
             dgvSinhVien.CellClick += DgvSinhVien_CellClick;
             btn_edit.Click += Btn_edit_Click;
+            btn_delete.Click += Btn_delete_Click;
             btn_clear.Click += Btn_clear_Click;
 
             dgvSinhVien.ReadOnly = true;
@@ -212,6 +213,49 @@ namespace WindowsFormsApp01
                     ResetForm();
                     LoadData();
                     MessageBox.Show("Cập nhật thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
+        }
+
+        private void Btn_delete_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_editingMSSV))
+            {
+                MessageBox.Show("Vui lòng chọn sinh viên từ danh sách!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            DialogResult result = MessageBox.Show("Bạn có chắc muốn xóa sinh viên này?", "Xác nhận", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+            if (result != DialogResult.Yes) return;
+
+            DialogResult result2 = MessageBox.Show("Xóa mềm (ẩn) hay xóa cứng (khỏi CSDL)?\nChọn Yes = Xóa mềm, No = Xóa cứng", "Chọn kiểu xóa", MessageBoxButtons.YesNoCancel, MessageBoxIcon.Question);
+            if (result2 == DialogResult.Cancel) return;
+
+            using (var conn = DbContext.GetConnection())
+            {
+                conn.Open();
+                try
+                {
+                    if (result2 == DialogResult.Yes)
+                    {
+                        MySqlCommand cmd = new MySqlCommand("UPDATE Students SET IsDeleted=1 WHERE MSSV=@mssv", conn);
+                        cmd.Parameters.AddWithValue("@mssv", _editingMSSV);
+                        cmd.ExecuteNonQuery();
+                    }
+                    else
+                    {
+                        MySqlCommand cmd = new MySqlCommand("DELETE FROM Students WHERE MSSV=@mssv", conn);
+                        cmd.Parameters.AddWithValue("@mssv", _editingMSSV);
+                        cmd.ExecuteNonQuery();
+                    }
+                    ResetForm();
+                    _currentPage = 1;
+                    LoadData();
+                    MessageBox.Show("Xóa thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 }
                 catch (Exception ex)
                 {
