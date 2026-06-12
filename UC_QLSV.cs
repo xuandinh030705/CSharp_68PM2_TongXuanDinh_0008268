@@ -19,6 +19,11 @@ namespace WindowsFormsApp01
             btn_edit.Click += Btn_edit_Click;
             btn_delete.Click += Btn_delete_Click;
             btn_clear.Click += Btn_clear_Click;
+            btn_search.Click += Btn_search_Click;
+            btn_head.Click += Btn_head_Click;
+            button7.Click += Btn_prev_Click;
+            button8.Click += Btn_next_Click;
+            btn_tail.Click += Btn_tail_Click;
 
             dgvSinhVien.ReadOnly = true;
             dgvSinhVien.AllowUserToAddRows = false;
@@ -262,6 +267,43 @@ namespace WindowsFormsApp01
                     MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
                 }
             }
+        }
+
+        private void Btn_search_Click(object sender, EventArgs e)
+        {
+            _currentPage = 1;
+            LoadData();
+        }
+
+        private void Btn_head_Click(object sender, EventArgs e)
+        {
+            _currentPage = 1;
+            LoadData();
+        }
+
+        private void Btn_prev_Click(object sender, EventArgs e)
+        {
+            if (_currentPage > 1)
+            {
+                _currentPage--;
+                LoadData();
+            }
+        }
+
+        private void Btn_next_Click(object sender, EventArgs e)
+        {
+            int totalPages = Math.Max(1, (int)Math.Ceiling((double)_totalRecords / _pageSize));
+            if (_currentPage < totalPages)
+            {
+                _currentPage++;
+                LoadData();
+            }
+        }
+
+        private void Btn_tail_Click(object sender, EventArgs e)
+        {
+            _currentPage = Math.Max(1, (int)Math.Ceiling((double)_totalRecords / _pageSize));
+            LoadData();
         }
 
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e) { }
