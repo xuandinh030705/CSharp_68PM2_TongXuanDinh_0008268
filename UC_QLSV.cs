@@ -16,6 +16,7 @@ namespace WindowsFormsApp01
         {
             InitializeComponent();
             dgvSinhVien.CellClick += DgvSinhVien_CellClick;
+            btn_edit.Click += Btn_edit_Click;
             btn_clear.Click += Btn_clear_Click;
 
             dgvSinhVien.ReadOnly = true;
@@ -165,6 +166,58 @@ namespace WindowsFormsApp01
 
             txt_mssv.Enabled = false;
             _editingMSSV = txt_mssv.Text;
+        }
+
+        private void Btn_edit_Click(object sender, EventArgs e)
+        {
+            if (string.IsNullOrEmpty(_editingMSSV))
+            {
+                MessageBox.Show("Vui lòng chọn sinh viên từ danh sách!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string mssv = txt_mssv.Text.Trim();
+            string name = txt_name.Text.Trim();
+            string gioitinh = cboGioiTinh.Text.Trim();
+            DateTime dateTime = dtpNgaySinh.Value;
+
+            if (string.IsNullOrEmpty(name))
+            {
+                MessageBox.Show("Vui lòng nhập Họ tên!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (cbxLopHoc.SelectedValue == null)
+            {
+                MessageBox.Show("Vui lòng chọn lớp học!", "Cảnh báo", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            string classId = cbxLopHoc.SelectedValue.ToString();
+
+            using (var conn = DbContext.GetConnection())
+            {
+                conn.Open();
+                string sql = "UPDATE Students SET FullName=@name, DateOfBirth=@dob, Gender=@gender, ClassId=@classId WHERE MSSV=@mssv";
+                MySqlCommand cmd = new MySqlCommand(sql, conn);
+                cmd.Parameters.AddWithValue("@mssv", _editingMSSV);
+                cmd.Parameters.AddWithValue("@name", name);
+                cmd.Parameters.AddWithValue("@dob", dateTime);
+                cmd.Parameters.AddWithValue("@gender", gioitinh);
+                cmd.Parameters.AddWithValue("@classId", classId);
+
+                try
+                {
+                    cmd.ExecuteNonQuery();
+                    ResetForm();
+                    LoadData();
+                    MessageBox.Show("Cập nhật thành công!", "Thông báo", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show("Lỗi: " + ex.Message, "Lỗi", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                }
+            }
         }
 
         private void comboBox2_SelectedIndexChanged(object sender, EventArgs e) { }
